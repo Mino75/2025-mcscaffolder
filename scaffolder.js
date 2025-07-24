@@ -140,8 +140,6 @@ const ASSETS = [
   '/main.js',
   '/styles.js',
   '/manifest.json',
-  '/protagonist.json',
-  '/decor.json',
   '/icon-512.png',
   '/icon-192.png',
   '/favicon.ico'
@@ -239,8 +237,6 @@ Dia Game`;
   writeFile('styles.js', '');
 
   console.log('\n📝 Note: You will need to add the following files manually:');
-  console.log('  - protagonist.json (animal data)');
-  console.log('  - decor.json (decoration data)');
   console.log('  - icon-192.png (192x192 PNG icon)');
   console.log('  - icon-512.png (512x512 PNG icon)');
   console.log('  - favicon.ico (favicon file)');
