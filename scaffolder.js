@@ -110,15 +110,15 @@ app.get('/main.js', (req, res) => {
     let jsContent = fs.readFileSync(path.join(__dirname, 'main.js'), 'utf8');
     
     // Inject ONLY the rescue detection code at the beginning
-    const rescueCode = `
-// Cache Lock Rescue - Check for ${CACHE_VERSION} users and free older versions
+    const rescueCode = \`
+// Cache Lock Rescue - Check for \${CACHE_VERSION} users and free older versions
 if ('serviceWorker' in navigator) {
   caches.keys().then(cacheNames => {
-    const hasCurrentVersion = cacheNames.some(name => name.includes('-${CACHE_VERSION}'));
+    const hasCurrentVersion = cacheNames.some(name => name.includes('-\${CACHE_VERSION}'));
     
     if (!hasCurrentVersion && cacheNames.length > 0) {
       // Old version detected - unregister and reload
-      console.log('Cache lock detected - rescuing to ${CACHE_VERSION}...');
+      console.log('Cache lock detected - rescuing to \${CACHE_VERSION}...');
       navigator.serviceWorker.getRegistration().then(reg => {
         if (reg) reg.unregister().then(() => location.reload());
       });
@@ -129,10 +129,10 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js', {updateViaCache: 'none'});
   });
 }
-`;
+\`;
     
     // Prepend rescue code to your existing main.js
-    const finalContent = rescueCode + '\n\n' + jsContent;
+    const finalContent = rescueCode + '\\n\\n' + jsContent;
     
     res.setHeader('Content-Type', 'application/javascript');
     res.setHeader('Cache-Control', 'no-cache');
@@ -151,16 +151,16 @@ app.get('/service-worker.js', (req, res) => {
     let swContent = fs.readFileSync(path.join(__dirname, 'service-worker.js'), 'utf8');
     
     // Inject current version into service worker
-    const versionInjection = `
+    const versionInjection = \`
 // Version injected by server
-self.SW_CACHE_NAME = self.SW_CACHE_NAME || '${APP_NAME}-${CACHE_VERSION}';
-self.SW_TEMP_CACHE_NAME = self.SW_TEMP_CACHE_NAME || '${APP_NAME}-temp-${CACHE_VERSION}';
-self.SW_FIRST_TIME_TIMEOUT = '${process.env.SW_FIRST_TIME_TIMEOUT || '20000'}'; // Reduced from 30s
-self.SW_RETURNING_USER_TIMEOUT = '${process.env.SW_RETURNING_USER_TIMEOUT || '5000'}';
-self.SW_ENABLE_LOGS = '${process.env.SW_ENABLE_LOGS || 'true'}';
-`;
+self.SW_CACHE_NAME = self.SW_CACHE_NAME || '\${APP_NAME}-\${CACHE_VERSION}';
+self.SW_TEMP_CACHE_NAME = self.SW_TEMP_CACHE_NAME || '\${APP_NAME}-temp-\${CACHE_VERSION}';
+self.SW_FIRST_TIME_TIMEOUT = '\${process.env.SW_FIRST_TIME_TIMEOUT || "20000"}'; // Reduced from 30s
+self.SW_RETURNING_USER_TIMEOUT = '\${process.env.SW_RETURNING_USER_TIMEOUT || "5000"}';
+self.SW_ENABLE_LOGS = '\${process.env.SW_ENABLE_LOGS || "true"}';
+\`;
     
-    swContent = versionInjection + '\n' + swContent;
+    swContent = versionInjection + '\\n' + swContent;
     
     // Cache-busting headers
     res.setHeader('Content-Type', 'application/javascript');
@@ -183,7 +183,7 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(\`Server running at http://localhost:\${PORT}\`);
 });`;
   writeFile('server.js', serverJs);
 
@@ -344,7 +344,7 @@ const ASSETS = [
 // Logging helper
 function log(message) {
   if (CONFIG.ENABLE_LOGS) {
-    console.log(`Service Worker: ${message}`);
+    console.log(\`Service Worker: \${message}\`);
   }
 }
 
@@ -359,12 +359,12 @@ self.addEventListener('install', event => {
         ASSETS.map(url => {
           return fetch(url).then(response => {
             if (!response.ok) {
-              throw new Error(`Failed to fetch ${url}: ${response.status}`);
+              throw new Error(\`Failed to fetch \${url}: \${response.status}\`);
             }
-            console.log(`Service Worker: Cached ${url}`);
+            console.log(\`Service Worker: Cached \${url}\`);
             return tempCache.put(url, response.clone());
           }).catch(error => {
-            console.error(`Service Worker: Failed to cache ${url}:`, error);
+            console.error(\`Service Worker: Failed to cache \${url}:\`, error);
             // Continue with other assets even if one fails
             return null;
           });
@@ -407,7 +407,7 @@ self.addEventListener('activate', event => {
           cacheName !== TEMP_CACHE
         );
         
-        console.log(`Service Worker: Deleting ${oldCaches.length} old caches:`, oldCaches);
+        console.log(\`Service Worker: Deleting \${oldCaches.length} old caches:\`, oldCaches);
         await Promise.all(oldCaches.map(cacheName => caches.delete(cacheName)));
 
         
@@ -420,7 +420,7 @@ self.addEventListener('activate', event => {
         console.log('Service Worker: Cache replacement completed successfully');
       } else {
         // FAILURE: Not all assets → Keep old version
-        console.error(`Service Worker: Incomplete staging - expected ${ASSETS.length}, got ${cachedRequests.length}. Keeping old cache.`);
+        console.error(\`Service Worker: Incomplete staging - expected \${ASSETS.length}, got \${cachedRequests.length}. Keeping old cache.\`);
         await caches.delete(TEMP_CACHE);
       }
       
@@ -443,7 +443,7 @@ async function handleFetch(request) {
   try {
     // Check if we're offline
     if (!navigator.onLine) {
-      console.log(`Service Worker: No internet - serving from cache: ${request.url}`);
+      console.log(\`Service Worker: No internet - serving from cache: \${request.url}\`);
       return await serveFromCache(request);
     }
     
@@ -451,12 +451,12 @@ async function handleFetch(request) {
     const hasCache = await checkIfCacheExists();
     
     if (!hasCache) {
-      console.log(`Service Worker: First time user - MUST wait for network: ${request.url}`);
+      console.log(\`Service Worker: First time user - MUST wait for network: \${request.url}\`);
       return await fetchFromNetworkWithExtendedTimeout(request);
     }
     
     // Existing user with cache - try network with short timeout
-    console.log(`Service Worker: Existing user - trying network with fallback: ${request.url}`);
+    console.log(\`Service Worker: Existing user - trying network with fallback: \${request.url}\`);
     return await fetchFromNetworkWithFallback(request);
     
   } catch (error) {
@@ -477,7 +477,7 @@ async function checkIfCacheExists() {
 
 async function fetchFromNetworkWithExtendedTimeout(request) {
   try {
-    console.log(`Service Worker: First time user - extended network timeout: ${request.url}`);
+    console.log(\`Service Worker: First time user - extended network timeout: \${request.url}\`);
     
     // Extended timeout for first-time users (30 seconds)
     const timeoutPromise = new Promise((_, reject) => {
@@ -490,11 +490,11 @@ async function fetchFromNetworkWithExtendedTimeout(request) {
     ]);
     
     if (!networkResponse.ok) {
-      throw new Error(`Server error: ${networkResponse.status}`);
+      throw new Error(\`Server error: \${networkResponse.status}\`);
     }
     
     // SUCCESS: Cache for future use
-    console.log(`Service Worker: First time success - caching: ${request.url}`);
+    console.log(\`Service Worker: First time success - caching: \${request.url}\`);
     const cache = await caches.open(LIVE_CACHE);
     cache.put(request, networkResponse.clone());
     
@@ -529,7 +529,7 @@ async function serveFromCache(request) {
 
 async function fetchFromNetworkWithFallback(request) {
   try {
-    console.log(`Service Worker: Attempting network request: ${request.url}`);
+    console.log(\`Service Worker: Attempting network request: \${request.url}\`);
     
     // Create timeout promise (5 seconds max wait)
     const timeoutPromise = new Promise((_, reject) => {
@@ -544,12 +544,12 @@ async function fetchFromNetworkWithFallback(request) {
     
     // CRITICAL CHECK: Server error?
     if (!networkResponse.ok) {
-      console.warn(`Service Worker: Server error ${networkResponse.status} - falling back to cache`);
+      console.warn(\`Service Worker: Server error \${networkResponse.status} - falling back to cache\`);
       return await serveFromCache(request);
     }
     
     // NETWORK SUCCESS: Cache it and return
-    console.log(`Service Worker: Network success for ${request.url} - caching response`);
+    console.log(\`Service Worker: Network success for \${request.url} - caching response\`);
     const cache = await caches.open(LIVE_CACHE);
     cache.put(request, networkResponse.clone());
     
