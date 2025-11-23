@@ -17,6 +17,16 @@ function writeFile(filePath, content) {
   console.log(`Created file: ${filePath}`);
 }
 
+// Write file only if it does not exist
+function writeFileIfAbsent(filePath, content) {
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, content, 'utf8');
+    console.log(`Created file (new): ${filePath}`);
+  } else {
+    console.log(`Skipped existing file: ${filePath}`);
+  }
+}
+
 // Main scaffolding function
 function scaffoldRepository() {
   console.log('🚀 Starting Dia game repository scaffolding...\n');
@@ -185,7 +195,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(\`Server running at http://localhost:\${PORT}\`);
 });`;
-  writeFile('server.js', serverJs);
+  writeFileIfAbsent('server.js', serverJs);
 
   // Create Dockerfile
   const dockerfile = `# Use Node.js 20 (Alpine) as the base image
@@ -641,9 +651,9 @@ Dia Game`;
   writeFile('README.md', readmeContent);
 
   // Create empty main content files as requested
-  writeFile('index.html', '');
-  writeFile('main.js', '');
-  writeFile('styles.js', '');
+  writeFileIfAbsent('index.html', '');
+  writeFileIfAbsent('main.js', '');
+  writeFileIfAbsent('styles.js', '');
 
   console.log('\n📝 Note: You will need to add the following files manually:');
   console.log('  - icon-192.png (192x192 PNG icon)');
